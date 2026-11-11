@@ -1,0 +1,36 @@
+name: Build Windows exe
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  win:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Download pixel fonts (OFL licensed)
+        shell: bash
+        run: |
+          mkdir -p app/fonts
+          curl -fL -o app/fonts/PressStart2P-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/pressstart2p/PressStart2P-Regular.ttf" || echo "WARN: Press Start 2P not downloaded"
+          curl -fL -o app/fonts/VT323-Regular.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/vt323/VT323-Regular.ttf" || echo "WARN: VT323 not downloaded"
+          curl -fL -o app/fonts/PixelifySans.ttf "https://raw.githubusercontent.com/google/fonts/main/ofl/pixelifysans/PixelifySans%5Bwght%5D.ttf" || echo "WARN: Pixelify Sans not downloaded"
+          curl -fL -o app/fonts/OFL.txt "https://raw.githubusercontent.com/google/fonts/main/ofl/pressstart2p/OFL.txt" || true
+      - run: npm install
+      - run: npx electron-builder --win portable --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PixnaisStudio-windows
+          path: dist/*.exe
+      - name: Update the "latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Pixnais Studio (Windows)
+          body: "Portable Windows build: download PixnaisStudio-1.0.0.exe and run it, no install needed."
+          files: dist/*.exe
